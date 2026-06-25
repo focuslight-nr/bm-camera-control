@@ -132,6 +132,23 @@ UI defaults to **English** and switches to **Japanese** via the header toggle
 (persisted to `localStorage`). Strings live in `src/i18n.ts` (`useT()` hook);
 add a language by extending the `STR` table.
 
+## CI & releases
+
+- **CI** (`.github/workflows/ci.yml`) runs on every push to `main` and on PRs:
+  type-checks + builds the frontend and `cargo check`s the Rust backend.
+- **Release** (`.github/workflows/release.yml`) runs when you push a version tag
+  and builds native installers for **Windows** and **macOS** (Apple Silicon +
+  Intel), attaching them to a **draft** GitHub Release:
+
+  ```bash
+  # bump version in package.json + src-tauri/{Cargo.toml,tauri.conf.json} first
+  git tag v0.1.0 && git push origin v0.1.0
+  ```
+
+  Builds are **unsigned** — Windows SmartScreen / macOS Gatekeeper will warn
+  about an unknown developer. Add code-signing certs (as repo secrets) wired into
+  `tauri-action` for distributable builds.
+
 ## Status
 
 Implemented: connection + capability detection, Transport, Lens, Exposure

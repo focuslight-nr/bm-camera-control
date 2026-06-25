@@ -127,6 +127,23 @@ npm run tauri build    # 現在の OS 向けインストーラ(Win .msi / macOS 
 UI は既定で **英語**、ヘッダーのトグルで **日本語** に切り替えられます(`localStorage` に永続化)。
 文字列は `src/i18n.ts`(`useT()` フック)にあり、`STR` テーブルを拡張すれば言語を追加できます。
 
+## CI & リリース
+
+- **CI**(`.github/workflows/ci.yml`)は `main` への push と PR ごとに実行され、
+  フロントエンドの型チェック+ビルドと、Rust バックエンドの `cargo check` を行います。
+- **リリース**(`.github/workflows/release.yml`)はバージョンタグを push すると実行され、
+  **Windows** と **macOS**(Apple Silicon + Intel)向けのネイティブインストーラをビルドして、
+  **下書き(draft)**の GitHub Release に添付します:
+
+  ```bash
+  # 先に package.json と src-tauri/{Cargo.toml,tauri.conf.json} のバージョンを更新
+  git tag v0.1.0 && git push origin v0.1.0
+  ```
+
+  ビルドは **署名なし**です(Windows SmartScreen / macOS Gatekeeper が「不明な発行元」と警告
+  します)。一般配布する場合は、コード署名証明書をリポジトリの Secrets に登録し、`tauri-action`
+  に配線してください。
+
 ## 実装状況
 
 実装済み: 接続 + ケイパビリティ検出、収録/再生(Transport)、レンズ、露出(ディテール

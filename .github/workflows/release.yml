@@ -1,0 +1,61 @@
+name: Release
+
+# Push a version tag to build installers and attach them to a GitHub Release:
+#   git tag v0.1.0 && git push origin v0.1.0
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write # needed to create the release and upload assets
+
+jobs:
+  release:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: macos-latest # Apple Silicon
+            args: "--target aarch64-apple-darwin"
+            rust_targets: "aarch64-apple-darwin"
+          - platform: macos-latest # Intel
+            args: "--target x86_64-apple-darwin"
+            rust_targets: "x86_64-apple-darwin"
+          - platform: windows-latest
+            args: ""
+            rust_targets: ""
+
+    runs-on: ${{ matrix.platform }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.rust_targets }}
+
+      - uses: swatinem/rust-cache@v2
+        with:
+          workspaces: "./src-tauri -> target"
+
+      - name: Install JS deps
+        run: npm ci
+
+      # Builds the frontend (via beforeBuildCommand) + native installers, then
+      # creates/updates a DRAFT GitHub Release and uploads the artifacts.
+      # Unsigned: Windows SmartScreen / macOS Gatekeeper will warn until signed.
+      - uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tagName: ${{ github.ref_name }}
+          releaseName: "Bm Camera Control ${{ github.ref_name }}"
+          releaseBody: "Download the installer for your OS below. Unsigned build — your OS may warn about an unknown developer."
+          releaseDraft: true
+          prerelease: false
+          args: ${{ matrix.args }}
