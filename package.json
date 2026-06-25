@@ -2,6 +2,8 @@
   "name": "bm-camera-control",
   "private": true,
   "version": "0.1.0",
+  "description": "Unofficial cross-platform desktop app to control Blackmagic cameras via the Camera Control REST API (Tauri + React).",
+  "license": "MIT",
   "type": "module",
   "scripts": {
     "dev": "vite",
