@@ -75,6 +75,15 @@ npm run tauri build    # native installer for the current OS (Win .msi / macOS .
 2. Launch the app, switch the source toggle to **Camera**, enter the hostname
    (e.g. `studio-camera-6k-pro.local`), keep HTTPS on, and Connect.
 
+### Secure login (HTTP Basic auth)
+
+If **Secure login** is enabled in Blackmagic Camera Setup, the camera requires
+HTTP Basic authentication on the HTTPS endpoint (it responds `401` with
+`WWW-Authenticate: Basic`). With HTTPS ticked, enter the camera's **Username /
+Password** in the connect bar — the credentials are sent on both the REST calls
+and the WebSocket handshake. Credentials are kept in memory only (never written
+to disk). If Secure login is off, leave them blank (or connect over HTTP).
+
 ## Discovery & multi-camera
 
 - **Scan network** (desktop) finds cameras by probing the local /24 for the REST

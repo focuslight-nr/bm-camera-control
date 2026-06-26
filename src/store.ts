@@ -11,7 +11,7 @@ export type ConnState = "disconnected" | "connecting" | "connected" | "error";
 export interface Session {
   id: string; // "mock:<profile>" or hostname
   label: string;
-  source: { useMock: boolean; mockProfile?: string; host?: string; secure?: boolean };
+  source: { useMock: boolean; mockProfile?: string; host?: string; secure?: boolean; username?: string; password?: string };
   transport: Transport | null;
   conn: ConnState;
   wsStatus: string;
@@ -65,6 +65,8 @@ interface AppState {
   secure: boolean;
   useMock: boolean;
   mockProfile: string;
+  username: string;
+  password: string;
 
   // Global settings.
   recentHosts: string[];
@@ -87,6 +89,8 @@ interface AppState {
   setUseMock: (m: boolean) => void;
   setMockProfile: (p: string) => void;
   setProgramGuard: (v: boolean) => void;
+  setUsername: (u: string) => void;
+  setPassword: (p: string) => void;
 
   addCamera: () => Promise<void>;
   connect: () => Promise<void>; // alias of addCamera (back-compat)
@@ -195,7 +199,7 @@ export const useStore = create<AppState>((set, get) => {
 
     const transport: Transport = source.useMock
       ? new MockTransport(source.mockProfile ?? "studio6k")
-      : new TauriTransport(source.host ?? "", source.secure ?? false);
+      : new TauriTransport(source.host ?? "", source.secure ?? false, source.username, source.password);
 
     try {
       const prod = await transport.request("GET", "/system/product");
@@ -262,6 +266,8 @@ export const useStore = create<AppState>((set, get) => {
     secure: true,
     useMock: !isTauri(),
     mockProfile: "studio6k",
+    username: "",
+    password: "",
 
     recentHosts: loadRecentHosts(),
     programGuard: true,
@@ -282,17 +288,31 @@ export const useStore = create<AppState>((set, get) => {
     setUseMock: (useMock) => set({ useMock }),
     setMockProfile: (mockProfile) => set({ mockProfile }),
     setProgramGuard: (programGuard) => set({ programGuard }),
+    setUsername: (username) => set({ username }),
+    setPassword: (password) => set({ password }),
 
     addCamera: async () => {
-      const { useMock, host, secure, mockProfile } = get();
+      const { useMock, host, secure, mockProfile, username, password } = get();
       const id = useMock ? `mock:${mockProfile}` : host.trim();
       if (!id) return;
-      if (get().sessions[id]) {
+      const label = useMock ? mockProfile : host.trim();
+      const source = useMock
+        ? { useMock: true, mockProfile }
+        : { useMock: false, host: host.trim(), secure, username: username || undefined, password: password || undefined };
+
+      const existing = get().sessions[id];
+      if (existing && existing.conn === "connected") {
         get().switchTo(id);
         return;
       }
-      const label = useMock ? mockProfile : host.trim();
-      const source = useMock ? { useMock: true, mockProfile } : { useMock: false, host: host.trim(), secure };
+      if (existing) {
+        // Retry an errored/closed session with the latest draft (e.g. new credentials).
+        patchSession(id, () => ({ source, conn: "connecting" }));
+        set({ activeId: id, error: null });
+        get().switchTo(id);
+        await connectSession(id);
+        return;
+      }
       set((s) => ({
         sessions: { ...s.sessions, [id]: emptySession(id, label, source) },
         order: [...s.order, id],

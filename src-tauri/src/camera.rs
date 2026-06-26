@@ -34,6 +34,10 @@ pub struct RequestArgs {
     pub path: String,
     /// Optional JSON body for PUT/POST.
     pub body: Option<serde_json::Value>,
+    /// Optional HTTP Basic credentials (required when the camera's
+    /// "Secure login" is enabled).
+    pub username: Option<String>,
+    pub password: Option<String>,
 }
 
 fn api_base(host: &str, secure: bool) -> String {
@@ -73,6 +77,9 @@ pub async fn camera_request(args: RequestArgs) -> HttpResult {
     };
 
     let mut req = client.request(method, &url);
+    if let Some(user) = &args.username {
+        req = req.basic_auth(user, args.password.as_deref());
+    }
     if let Some(body) = args.body {
         req = req.json(&body);
     }
@@ -185,7 +192,13 @@ pub async fn camera_ws_connect(
     state: State<'_, WsState>,
     host: String,
     secure: bool,
+    username: Option<String>,
+    password: Option<String>,
 ) -> Result<(), String> {
+    use base64::Engine;
+    use tokio_tungstenite::tungstenite::client::IntoClientRequest;
+    use tokio_tungstenite::tungstenite::http::{header::AUTHORIZATION, HeaderValue};
+
     // Drop any previous connection.
     {
         let mut guard = state.tx.lock().await;
@@ -200,8 +213,19 @@ pub async fn camera_ws_connect(
     let connector = tokio_tungstenite::Connector::NativeTls(connector);
 
     let url = ws_url(&host, secure);
+    let mut request = url.into_client_request().map_err(|e| e.to_string())?;
+    // Add HTTP Basic auth to the websocket handshake when credentials are given.
+    if let Some(user) = &username {
+        let raw = format!("{}:{}", user, password.clone().unwrap_or_default());
+        let value = format!("Basic {}", base64::engine::general_purpose::STANDARD.encode(raw));
+        request.headers_mut().insert(
+            AUTHORIZATION,
+            HeaderValue::from_str(&value).map_err(|e| e.to_string())?,
+        );
+    }
+
     let (ws_stream, _resp) = tokio_tungstenite::connect_async_tls_with_config(
-        &url,
+        request,
         None,
         false,
         Some(connector),

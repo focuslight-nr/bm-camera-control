@@ -20,6 +20,14 @@ export function ConnectBar() {
     }
   }
 
+  // Fill the host from a chip; only auto-connect if no credentials are required
+  // (HTTPS with Secure login needs username/password entered first).
+  function pickHost(h: string) {
+    s.setHost(h);
+    const needsCreds = s.secure && !(s.username && s.password);
+    if (!needsCreds) setTimeout(() => useStore.getState().connect(), 0);
+  }
+
   return (
     <div className="flex flex-wrap items-center gap-3">
       {/* Source toggle */}
@@ -66,6 +74,25 @@ export function ConnectBar() {
             <input type="checkbox" checked={s.secure} onChange={(e) => s.setSecure(e.target.checked)} />
             {t("conn.https")}
           </label>
+          {s.secure && (
+            <>
+              <input
+                placeholder={t("conn.username")}
+                value={s.username}
+                onChange={(e) => s.setUsername(e.target.value)}
+                autoComplete="off"
+                className="bg-[var(--color-panel-2)] border border-[var(--color-edge)] rounded-lg px-2 py-1.5 text-sm outline-none focus:border-[var(--color-accent-2)] w-[110px]"
+              />
+              <input
+                type="password"
+                placeholder={t("conn.password")}
+                value={s.password}
+                onChange={(e) => s.setPassword(e.target.value)}
+                autoComplete="off"
+                className="bg-[var(--color-panel-2)] border border-[var(--color-edge)] rounded-lg px-2 py-1.5 text-sm outline-none focus:border-[var(--color-accent-2)] w-[110px]"
+              />
+            </>
+          )}
           {isTauri() && (
             <button
               onClick={scan}
@@ -86,10 +113,7 @@ export function ConnectBar() {
           {found.map((d) => (
             <button
               key={d.host}
-              onClick={() => {
-                s.setHost(d.host);
-                setTimeout(() => useStore.getState().connect(), 0);
-              }}
+              onClick={() => pickHost(d.host)}
               className="px-2 py-0.5 text-[11px] rounded-md bg-[var(--color-panel-2)] border border-[var(--color-accent-2)] hover:bg-[var(--color-accent-2)] hover:text-black transition"
             >
               {d.productName || d.host} · {d.host}
@@ -105,6 +129,16 @@ export function ConnectBar() {
       >
         {t("conn.connect")}
       </button>
+
+      {s.conn === "connected" && (
+        <button
+          onClick={() => s.disconnect()}
+          title={t("conn.disconnect")}
+          className="px-3 py-1.5 rounded-lg text-sm font-medium transition bg-[var(--color-panel-2)] border border-[var(--color-edge)] hover:border-[var(--color-accent)] hover:text-[var(--color-accent)]"
+        >
+          {t("conn.disconnect")}
+        </button>
+      )}
 
       {/* Device + status */}
       <div className="flex items-center gap-3 ml-auto">
@@ -123,10 +157,7 @@ export function ConnectBar() {
           {s.recentHosts.map((h) => (
             <button
               key={h}
-              onClick={() => {
-                s.setHost(h);
-                setTimeout(() => useStore.getState().connect(), 0);
-              }}
+              onClick={() => pickHost(h)}
               className="px-2 py-0.5 text-[11px] rounded-md bg-[var(--color-panel-2)] border border-[var(--color-edge)] hover:border-[var(--color-accent-2)] transition"
             >
               {h}

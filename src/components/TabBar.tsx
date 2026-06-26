@@ -54,6 +54,8 @@ export function TabBar() {
             <span className="text-xs max-w-[150px] truncate">{s.device.productName || s.label}</span>
             {s.conn === "connecting" && <span className="text-[10px] text-[var(--color-muted)]">…</span>}
             <button
+              title={t("tab.close")}
+              aria-label={t("tab.close")}
               onClick={(e) => {
                 e.stopPropagation();
                 close(id);

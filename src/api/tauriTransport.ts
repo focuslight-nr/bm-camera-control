@@ -10,11 +10,21 @@ export class TauriTransport implements Transport {
   constructor(
     private host: string,
     private secure: boolean,
+    private username?: string,
+    private password?: string,
   ) {}
 
   async request(method: string, path: string, body?: Json): Promise<HttpResult> {
     return invoke<HttpResult>("camera_request", {
-      args: { host: this.host, secure: this.secure, method, path, body: body ?? null },
+      args: {
+        host: this.host,
+        secure: this.secure,
+        method,
+        path,
+        body: body ?? null,
+        username: this.username || null,
+        password: this.password || null,
+      },
     });
   }
 
@@ -34,7 +44,12 @@ export class TauriTransport implements Transport {
     this.unlisteners.push(
       await listen<string>("camera-ws-status", (e) => onStatus(e.payload)),
     );
-    await invoke("camera_ws_connect", { host: this.host, secure: this.secure });
+    await invoke("camera_ws_connect", {
+      host: this.host,
+      secure: this.secure,
+      username: this.username || null,
+      password: this.password || null,
+    });
   }
 
   async send(text: string): Promise<void> {

@@ -29,4 +29,5 @@ tokio-tungstenite = { version = "0.24", features = ["native-tls"] }
 futures-util = "0.3"
 native-tls = "0.2"
 url = "2"
+base64 = "0.22"
 

@@ -17,6 +17,7 @@ import { useLang, useT } from "./i18n";
 
 export default function App() {
   const conn = useStore((s) => s.conn);
+  const error = useStore((s) => s.error);
   const propertyData = useStore((s) => s.propertyData);
   const sessionCount = useStore((s) => s.order.length);
   const t = useT();
@@ -84,6 +85,11 @@ export default function App() {
             <MediaPanel />
             <ScenesPanel />
             <ApiConsole />
+          </div>
+        ) : conn === "error" ? (
+          <div className="flex flex-col items-center justify-center py-24 gap-2 text-sm">
+            <span className="text-[var(--color-accent)]">⚠ {t("conn.failed")}</span>
+            {error && <span className="text-[10px] text-[var(--color-muted)]">{error}</span>}
           </div>
         ) : (
           <div className="flex items-center justify-center py-24 text-[var(--color-muted)] text-sm">

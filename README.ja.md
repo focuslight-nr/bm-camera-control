@@ -72,6 +72,15 @@ npm run tauri build    # 現在の OS 向けインストーラ(Win .msi / macOS 
 2. アプリを起動し、ソース切替を **Camera** にして、ホスト名
    (例: `studio-camera-6k-pro.local`)を入力、HTTPS を有効のまま Connect します。
 
+### Secure login(HTTP Basic 認証)
+
+Blackmagic Camera Setup で **Secure login** を有効にすると、カメラは HTTPS エンドポイントで
+HTTP Basic 認証を要求します(`WWW-Authenticate: Basic` 付きの `401` を返します)。HTTPS に
+チェックを入れた状態で、接続バーにカメラの **ユーザー名 / パスワード** を入力してください。
+資格情報は REST 呼び出しと WebSocket ハンドシェイクの両方に付与されます。資格情報は
+メモリ上にのみ保持され、ディスクには保存しません。Secure login が無効なら空欄のままで
+構いません(または HTTP で接続)。
+
 ## 検出 & マルチカメラ
 
 - **ネットワークスキャン**(デスクトップ)は、ローカル /24 を REST API でプローブして
