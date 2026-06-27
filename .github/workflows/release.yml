@@ -51,7 +51,10 @@ jobs:
       # Unsigned: Windows SmartScreen / macOS Gatekeeper will warn until signed.
       - uses: tauri-apps/tauri-action@v0
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Use a PAT (secret RELEASE_TOKEN) to create the release.
+          # The default GITHUB_TOKEN was rejected with "Resource not accessible
+          # by integration" even with contents:write, so a PAT is used instead.
+          GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN }}
         with:
           tagName: ${{ github.ref_name }}
           releaseName: "Bm Camera Control ${{ github.ref_name }}"
