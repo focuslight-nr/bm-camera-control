@@ -49,7 +49,7 @@ jobs:
       # Builds the frontend (via beforeBuildCommand) + native installers, then
       # creates/updates a DRAFT GitHub Release and uploads the artifacts.
       # Unsigned: Windows SmartScreen / macOS Gatekeeper will warn until signed.
-      - uses: tauri-apps/tauri-action@v0
+      - uses: tauri-apps/tauri-action@v1
         env:
           # Use a PAT (secret RELEASE_TOKEN) to create the release.
           # The default GITHUB_TOKEN was rejected with "Resource not accessible
